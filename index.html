@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anitory - Storytelling Platform</title>
+    
+    <!-- Tailwind CSS (Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS STYLES (Copy to style.css) --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .story-font {
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Dark Mode overrides */
+        .dark {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        
+        /* Hide sections by default */
+        .view-section {
+            display: none;
+        }
+        .view-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- NAVIGATION -->
+    <nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="router.navigate('home')">
+                    <div class="bg-indigo-600 p-1.5 rounded-lg">
+                        <i data-lucide="book-open" class="text-white w-5 h-5"></i>
+                    </div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+                        Anitory
+                    </span>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center gap-6">
+                    <button onclick="router.navigate('home')" class="nav-link text-sm font-medium hover:text-indigo-600 transition-colors" data-page="home">Home</button>
+                    <button onclick="router.navigate('stories')" class="nav-link text-sm font-medium hover:text-indigo-600 transition-colors" data-page="stories">Stories</button>
+                    <button onclick="router.navigate('leaderboard')" class="nav-link text-sm font-medium hover:text-indigo-600 transition-colors" data-page="leaderboard">Leaderboard</button>
+                    
+                    <button onclick="router.navigate('submit')" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <i data-lucide="pen-tool" class="w-4 h-4"></i> Write Story
+                    </button>
+
+                    <!-- User Menu - FIX APPLIED HERE -->
+                    <div class="relative" 
+                         onmouseenter="ui.openUserMenu()" 
+                         onmouseleave="ui.closeUserMenu()"
+                         tabindex="0"> 
+                        <button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                            <i data-lucide="user" class="w-5 h-5 text-slate-600 dark:text-slate-300"></i>
+                        </button>
+                        <!-- Dropdown -->
+                        <div id="user-dropdown-menu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 hidden p-2 z-50">
+                            <div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Menu</div>
+                            <button onclick="router.navigate('dashboard')" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+                            </button>
+                            <button onclick="router.navigate('admin')" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i data-lucide="settings" class="w-4 h-4"></i> Admin Panel
+                            </button>
+                            <div class="h-px bg-slate-100 dark:bg-slate-700 my-2"></div>
+                            <button onclick="auth.toggleRole()" id="role-toggle-btn" class="w-full text-left px-4 py-2 rounded-lg text-sm text-indigo-600 dark:text-indigo-400 font-medium">
+                                Current: Admin
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dark Mode Toggle -->
+                    <button onclick="ui.toggleDarkMode()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                        <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Btn -->
+                <div class="flex items-center gap-4 md:hidden">
+                    <button onclick="ui.toggleDarkMode()" class="p-2 text-slate-600 dark:text-slate-300">
+                        <i id="theme-icon-mobile" data-lucide="moon" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="ui.toggleMobileMenu()" class="text-slate-600 dark:text-slate-300">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Nav Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-4 space-y-3">
+            <button onclick="router.navigate('home')" class="block w-full text-left px-4 py-2 text-slate-600 dark:text-slate-300 font-medium">Home</button>
+            <button onclick="router.navigate('stories')" class="block w-full text-left px-4 py-2 text-slate-600 dark:text-slate-300 font-medium">Stories</button>
+            <button onclick="router.navigate('leaderboard')" class="block w-full text-left px-4 py-2 text-slate-600 dark:text-slate-300 font-medium">Leaderboard</button>
+            <button onclick="router.navigate('submit')" class="block w-full text-left px-4 py-2 text-indigo-600 font-bold">Write Story</button>
+            <button onclick="router.navigate('dashboard')" class="block w-full text-left px-4 py-2 text-slate-600 dark:text-slate-300 font-medium">Dashboard</button>
+            <button onclick="router.navigate('admin')" class="block w-full text-left px-4 py-2 text-slate-600 dark:text-slate-300 font-medium">Admin</button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main id="app-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <!-- 1. HOME VIEW -->
+        <div id="view-home" class="view-section fade-in">
+            <!-- Hero -->
+            <section class="mb-12 relative overflow-hidden rounded-3xl bg-indigo-900 text-white min-h-[400px] flex items-center shadow-2xl">
+                <div class="absolute inset-0 z-0 opacity-40">
+                   <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80&w=1200" class="w-full h-full object-cover" alt="Hero Background">
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-950 via-indigo-900/80 to-transparent z-10"></div>
+                <div class="relative z-20 p-8 md:p-16 max-w-3xl">
+                    <span class="inline-block px-3 py-1 bg-amber-400 text-indigo-950 text-xs font-bold uppercase tracking-wider rounded-full mb-4">Featured Story</span>
+                    <div id="hero-content">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trending -->
+            <section class="mb-12">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <i data-lucide="trophy" class="text-amber-500 w-6 h-6"></i> Trending Now
+                        </h2>
+                        <p class="text-slate-500 dark:text-slate-400">Top voted stories this week</p>
+                    </div>
+                    <button onclick="router.navigate('leaderboard')" class="text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline">View Leaderboard</button>
+                </div>
+                <div id="trending-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Cards populated by JS -->
+                </div>
+            </section>
+        </div>
+
+        <!-- 2. STORIES VIEW -->
+        <div id="view-stories" class="view-section fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <h2 class="text-3xl font-bold text-slate-800 dark:text-white">All Stories</h2>
+                
+                <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                    <!-- Search -->
+                    <div class="relative flex-1 md:w-64">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="search-input" oninput="app.filterStories()" placeholder="Search titles..." class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm dark:text-white">
+                    </div>
+                    <!-- Sort -->
+                    <div class="relative">
+                        <i data-lucide="filter" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <select id="sort-select" onchange="app.filterStories()" class="pl-10 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm appearance-none cursor-pointer dark:text-white">
+                            <option value="newest">Newest First</option>
+                            <option value="most-loved">Most Loved</option>
+                            <option value="most-liked">Most Liked</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div id="category-pills" class="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Grid -->
+            <div id="stories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Cards populated by JS -->
+            </div>
+            
+            <div id="no-results" class="hidden text-center py-20 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                <i data-lucide="search" class="w-12 h-12 text-slate-400 mx-auto mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-700 dark:text-slate-300">No stories found</h3>
+            </div>
+        </div>
+
+        <!-- 3. SUBMIT VIEW -->
+        <div id="view-submit" class="view-section fade-in">
+            <div class="max-w-3xl mx-auto">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-100 dark:border-slate-700">
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                        <i data-lucide="pen-tool" class="text-indigo-600 w-6 h-6"></i> Submit Your Story
+                    </h2>
+                    <form onsubmit="app.handleStorySubmit(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Title</label>
+                                <input required type="text" name="title" class="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" placeholder="Enter story title">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Category</label>
+                                <select name="category" class="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white">
+                                    <option>Fantasy</option>
+                                    <option>Sci-Fi</option>
+                                    <option>Romance</option>
+                                    <option>Thriller</option>
+                                    <option>Horror</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Cover Image URL (Optional)</label>
+                            <input type="text" name="image" class="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" placeholder="https://...">
+                        </div>
+
+                        <div>
+                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Short Summary</label>
+                             <textarea required rows="2" name="summary" class="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white" placeholder="A brief hook..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Story Content</label>
+                            <textarea required rows="12" name="content" class="w-full px-4 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:text-white story-font leading-relaxed" placeholder="Once upon a time..."></textarea>
+                        </div>
+
+                        <div class="pt-4 flex justify-end">
+                            <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg flex items-center gap-2">
+                                <i data-lucide="share-2" class="w-4 h-4"></i> Publish Story
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. LEADERBOARD VIEW -->
+        <div id="view-leaderboard" class="view-section fade-in">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Weekly Leaderboard</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Top stories ranked by engagement</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+                    <div class="grid grid-cols-12 gap-4 p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <div class="col-span-1 text-center">Rank</div>
+                        <div class="col-span-7 md:col-span-6">Story</div>
+                        <div class="col-span-4 md:col-span-5 text-right pr-4">Stats</div>
+                    </div>
+                    <div id="leaderboard-list" class="divide-y divide-slate-100 dark:divide-slate-700">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. DASHBOARD VIEW -->
+        <div id="view-dashboard" class="view-section fade-in">
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">Creator Dashboard</h2>
+            <!-- Stats -->
+            <div id="dashboard-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Populated by JS -->
+            </div>
+            <!-- My Stories -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Your Stories</h3>
+                <div id="my-stories-list" class="space-y-4">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. ADMIN VIEW -->
+        <div id="view-admin" class="view-section fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Admin Console</h2>
+                <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Admin Mode</span>
+            </div>
+            <!-- Dynamic container to prevent full view replacement and loss of structure -->
+            <div id="admin-panel-content">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 overflow-x-auto">
+                   <table class="w-full text-left min-w-[600px]">
+                     <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                       <tr>
+                         <th class="p-4 text-xs font-bold text-slate-500 uppercase">Title</th>
+                         <th class="p-4 text-xs font-bold text-slate-500 uppercase">Author</th>
+                         <th class="p-4 text-xs font-bold text-slate-500 uppercase">Stats</th>
+                         <th class="p-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                       </tr>
+                     </thead>
+                     <tbody id="admin-table-body" class="divide-y divide-slate-100 dark:divide-slate-700">
+                       <!-- Populated by JS -->
+                     </tbody>
+                   </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-slate-500 dark:text-slate-400 text-sm">© 2024 Anitory. Where stories come alive.</p>
+        </div>
+    </footer>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span id="toast-msg">Success</span>
+    </div>
+
+    <!-- READING MODAL -->
+    <div id="read-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl relative animate-in fade-in">
+            <div class="sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center z-10">
+                <h2 id="modal-title" class="text-xl font-bold text-slate-800 dark:text-slate-100 truncate pr-4">Title</h2>
+                <button onclick="ui.closeModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
+                    <i data-lucide="x" class="text-slate-500 w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-8">
+                <img id="modal-image" src="" alt="cover" class="w-full h-64 object-cover rounded-xl mb-8 shadow-md">
+                <div class="flex items-center gap-2 mb-6 text-sm text-slate-500 flex-wrap">
+                    <span id="modal-category" class="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full">Cat</span>
+                    <span>•</span>
+                    <span id="modal-author">Author</span>
+                </div>
+                <div id="modal-content" class="prose dark:prose-invert max-w-none mb-10 text-slate-700 dark:text-slate-300 text-lg leading-relaxed whitespace-pre-line story-font">
+                    <!-- Content -->
+                </div>
+                <!-- Voting in Modal -->
+                <div class="flex items-center justify-center gap-6 pt-8 border-t border-slate-100 dark:border-slate-800">
+                    <button onclick="app.voteFromModal('love')" class="flex flex-col items-center gap-2 group">
+                        <div id="modal-btn-love" class="p-4 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:scale-110 transition-transform">
+                            <i data-lucide="heart" class="w-8 h-8"></i>
+                        </div>
+                        <span id="modal-count-love" class="font-bold text-slate-600 dark:text-slate-400">0 Loves</span>
+                    </button>
+                    <button onclick="app.voteFromModal('like')" class="flex flex-col items-center gap-2 group">
+                        <div id="modal-btn-like" class="p-4 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:scale-110 transition-transform">
+                            <i data-lucide="thumbs-up" class="w-8 h-8"></i>
+                        </div>
+                        <span id="modal-count-like" class="font-bold text-slate-600 dark:text-slate-400">0 Likes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC (Copy to script.js) -->
+    <script>
+        // --- DATA ---
+        const INITIAL_STORIES = [
+            {
+                id: 1,
+                title: "The Clockmaker's Daughter",
+                author: "Elena Fisher",
+                category: "Fantasy",
+                content: "In a city where time was currency, Elara found herself bankrupt. But she held a secret: she could wind time backwards, specifically, thirteen seconds at a time. It wasn't much, but it was enough to steal the Key of Chronos...",
+                summary: "A girl who can rewind time 13 seconds attempts a heist in a steampunk metropolis.",
+                image: "https://images.unsplash.com/photo-1506466010722-395aa2bef877?auto=format&fit=crop&q=80&w=800",
+                likes: 142, loves: 89, reads: 1205, isFeatured: true, timestamp: Date.now()
+            },
+            {
+                id: 2,
+                title: "Silence of the Nebulas",
+                author: "Jaxon Reed",
+                category: "Sci-Fi",
+                content: "The comms had been dead for three weeks. Station Alpha-9 was drifting into the event horizon. That's when we heard the knocking on the airlock door from the outside...",
+                summary: "A stranded crew hears a knock on the airlock door while drifting into a black hole.",
+                image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800",
+                likes: 88, loves: 45, reads: 890, isFeatured: true, timestamp: Date.now() - 1000
+            },
+            {
+                id: 3,
+                title: "The Barista's Curse",
+                author: "Sarah Jenks",
+                category: "Romance",
+                content: "Every latte art she poured predicted the customer's future. A heart? They'd find love. A cloud? Bad day ahead. Today, she poured a skull for the handsome stranger...",
+                summary: "Latte art predicts the future, leading to an awkward date with destiny.",
+                image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=800",
+                likes: 210, loves: 156, reads: 3400, isFeatured: false, timestamp: Date.now() - 2000
+            }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        const state = {
+            stories: JSON.parse(localStorage.getItem('anitory_stories')) || INITIAL_STORIES,
+            user: { name: "Elena Fisher", role: "admin" },
+            darkMode: false,
+            filter: { category: "All", search: "", sort: "newest" },
+            currentModalStoryId: null
+        };
+
+        const CATEGORIES = ["All", "Fantasy", "Sci-Fi", "Romance", "Thriller", "Horror"];
+
+        // --- AUTH ---
+        const auth = {
+            toggleRole: () => {
+                state.user.role = state.user.role === 'admin' ? 'user' : 'admin';
+                document.getElementById('role-toggle-btn').innerText = `Current: ${state.user.role === 'admin' ? 'Admin' : 'Reader'}`;
+                ui.showToast(`Switched to ${state.user.role} mode`);
+                app.render(); // Re-render to show/hide admin button
+                ui.closeUserMenu(); // Close the menu after toggling
+            }
+        };
+
+        // --- UI CONTROLLER ---
+        let menuTimeout; // Used to control the delay for closing the user menu
+
+        const ui = {
+            toggleDarkMode: () => {
+                state.darkMode = !state.darkMode;
+                document.body.classList.toggle('dark', state.darkMode);
+                // Update icons
+                const icon = state.darkMode ? 'sun' : 'moon';
+                document.getElementById('theme-icon').setAttribute('data-lucide', icon);
+                document.getElementById('theme-icon-mobile').setAttribute('data-lucide', icon);
+                lucide.createIcons();
+            },
+            
+            toggleMobileMenu: () => {
+                const menu = document.getElementById('mobile-menu');
+                menu.classList.toggle('hidden');
+            },
+
+            // New User Menu functions for robust hover experience
+            openUserMenu: () => {
+                clearTimeout(menuTimeout);
+                document.getElementById('user-dropdown-menu').classList.remove('hidden');
+            },
+
+            closeUserMenu: () => {
+                // Add a small delay (200ms) before hiding to prevent flicker
+                menuTimeout = setTimeout(() => {
+                    document.getElementById('user-dropdown-menu').classList.add('hidden');
+                }, 200);
+            },
+            // End of User Menu functions
+
+            showToast: (msg, type = 'success') => {
+                const toast = document.getElementById('toast');
+                const msgEl = document.getElementById('toast-msg');
+                msgEl.innerText = msg;
+                toast.classList.remove('bg-green-500', 'bg-blue-500', 'bg-red-500');
+                toast.classList.add(type === 'success' ? 'bg-green-500' : 'bg-blue-500');
+                
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            },
+
+            openModal: (storyId) => {
+                const story = state.stories.find(s => s.id === storyId);
+                if(!story) return;
+
+                // Increment read count
+                story.reads++;
+                app.saveData();
+
+                state.currentModalStoryId = story.id;
+                document.getElementById('modal-title').innerText = story.title;
+                document.getElementById('modal-image').src = story.image;
+                document.getElementById('modal-category').innerText = story.category;
+                document.getElementById('modal-author').innerText = `by ${story.author}`;
+                document.getElementById('modal-content').innerText = story.content;
+                
+                ui.updateModalButtons(story);
+
+                document.getElementById('read-modal').classList.remove('hidden');
+            },
+
+            closeModal: () => {
+                document.getElementById('read-modal').classList.add('hidden');
+                state.currentModalStoryId = null;
+                app.render(); // Re-render lists to update read counts
+            },
+
+            updateModalButtons: (story) => {
+                const loveBtn = document.getElementById('modal-btn-love');
+                const likeBtn = document.getElementById('modal-btn-like');
+                
+                document.getElementById('modal-count-love').innerText = `${story.loves} Loves`;
+                document.getElementById('modal-count-like').innerText = `${story.likes} Likes`;
+
+                loveBtn.classList.toggle('text-pink-600', story.loves > 0);
+                loveBtn.classList.toggle('bg-pink-100', story.loves > 0);
+                likeBtn.classList.toggle('text-blue-600', story.likes > 0);
+                likeBtn.classList.toggle('bg-blue-100', story.likes > 0);
+            }
+        };
+
+        // --- ROUTER ---
+        const router = {
+            navigate: (pageId) => {
+                // Hide all sections
+                document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+                
+                // Show target
+                const target = document.getElementById(`view-${pageId}`);
+                if (target) target.classList.add('active');
+
+                // Update active nav state
+                document.querySelectorAll('.nav-link').forEach(btn => {
+                    if(btn.dataset.page === pageId) btn.classList.add('text-indigo-600', 'dark:text-indigo-400');
+                    else btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
+                });
+
+                // Hide mobile menu if open
+                document.getElementById('mobile-menu').classList.add('hidden');
+
+                // Special renders
+                if(pageId === 'home') app.renderHome();
+                if(pageId === 'stories') app.renderStories();
+                if(pageId === 'leaderboard') app.renderLeaderboard();
+                if(pageId === 'dashboard') app.renderDashboard();
+                if(pageId === 'admin') app.renderAdmin();
+
+                // Close the user menu when navigating away
+                ui.closeUserMenu();
+            }
+        };
+
+        // --- APP LOGIC ---
+        const app = {
+            init: () => {
+                lucide.createIcons();
+                router.navigate('home');
+                app.renderCategoryPills();
+            },
+
+            saveData: () => {
+                localStorage.setItem('anitory_stories', JSON.stringify(state.stories));
+            },
+
+            // --- Home Page ---
+            renderHome: () => {
+                const featured = state.stories.find(s => s.isFeatured) || state.stories[0];
+                const heroHTML = `
+                    <h1 class="text-4xl md:text-6xl font-extrabold mb-4 leading-tight">${featured.title}</h1>
+                    <p class="text-indigo-200 text-lg mb-8 line-clamp-2 max-w-xl">${featured.summary}</p>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="ui.openModal(${featured.id})" class="bg-white text-indigo-900 px-8 py-3 rounded-full font-bold hover:bg-indigo-50 transition-colors flex items-center gap-2">
+                            Read Now <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                document.getElementById('hero-content').innerHTML = heroHTML;
+
+                // Trending
+                const trending = [...state.stories].sort((a,b) => (b.likes + b.loves) - (a.likes + a.loves)).slice(0, 4);
+                const trendingHTML = trending.map(story => app.createStoryCard(story)).join('');
+                document.getElementById('trending-grid').innerHTML = trendingHTML;
+                lucide.createIcons();
+            },
+
+            // --- Stories Page ---
+            renderStories: () => {
+                app.filterStories();
+            },
+
+            renderCategoryPills: () => {
+                const container = document.getElementById('category-pills');
+                container.innerHTML = CATEGORIES.map(cat => `
+                    <button onclick="app.setCategory('${cat}')" 
+                        class="category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${cat === 'All' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}"
+                        data-cat="${cat}">
+                        ${cat}
+                    </button>
+                `).join('');
+            },
+
+            setCategory: (cat) => {
+                state.filter.category = cat;
+                // Update UI
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    if(btn.dataset.cat === cat) {
+                        btn.className = 'category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors bg-indigo-600 text-white shadow-md';
+                    } else {
+                        btn.className = 'category-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700';
+                    }
+                });
+                app.filterStories();
+            },
+
+            filterStories: () => {
+                const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || "";
+                const sortOption = document.getElementById('sort-select')?.value || "newest";
+
+                let result = state.stories.filter(s => 
+                    (state.filter.category === "All" || s.category === state.filter.category) &&
+                    (s.title.toLowerCase().includes(searchTerm) || s.author.toLowerCase().includes(searchTerm))
+                );
+
+                if (sortOption === "most-loved") result.sort((a, b) => b.loves - a.loves);
+                else if (sortOption === "most-liked") result.sort((a, b) => b.likes - a.likes);
+                else result.sort((a, b) => b.timestamp - a.timestamp);
+
+                const grid = document.getElementById('stories-grid');
+                if(result.length === 0) {
+                    grid.innerHTML = '';
+                    document.getElementById('no-results').classList.remove('hidden');
+                } else {
+                    document.getElementById('no-results').classList.add('hidden');
+                    grid.innerHTML = result.map(s => app.createStoryCard(s)).join('');
+                    lucide.createIcons();
+                }
+            },
+
+            createStoryCard: (story) => {
+                return `
+                <div class="group bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-slate-100 dark:border-slate-700">
+                    <div class="relative h-48 overflow-hidden cursor-pointer" onclick="ui.openModal(${story.id})">
+                        <img src="${story.image}" alt="${story.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full">
+                            ${story.category}
+                        </div>
+                        ${story.isFeatured ? `<div class="absolute top-2 left-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1"><i data-lucide="star" class="w-3 h-3 fill-current"></i> Featured</div>` : ''}
+                    </div>
+                    
+                    <div class="p-5 flex-1 flex flex-col">
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 leading-tight mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors cursor-pointer" onclick="ui.openModal(${story.id})">
+                            ${story.title}
+                        </h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 flex-1">${story.summary}</p>
+                        
+                        <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
+                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">by ${story.author}</span>
+                            <div class="flex gap-3">
+                                <button onclick="event.stopPropagation(); app.handleVote(${story.id}, 'love')" class="flex items-center gap-1 transition-colors text-xs ${story.loves > 0 ? 'text-pink-500' : 'text-slate-400 hover:text-pink-500'}">
+                                    <i data-lucide="heart" class="w-4 h-4 ${story.loves > 0 ? 'fill-current' : ''}"></i> ${story.loves}
+                                </button>
+                                <button onclick="event.stopPropagation(); app.handleVote(${story.id}, 'like')" class="flex items-center gap-1 transition-colors text-xs ${story.likes > 0 ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}">
+                                    <i data-lucide="thumbs-up" class="w-4 h-4 ${story.likes > 0 ? 'fill-current' : ''}"></i> ${story.likes}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            },
+
+            // --- Submitting ---
+            handleStorySubmit: (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const newStory = {
+                    id: Date.now(),
+                    title: form.title.value,
+                    category: form.category.value,
+                    summary: form.summary.value,
+                    content: form.content.value,
+                    image: form.image.value || `https://source.unsplash.com/random/800x600/?${form.category.value.toLowerCase()}`,
+                    author: state.user.name,
+                    likes: 0, loves: 0, reads: 0, isFeatured: false, timestamp: Date.now()
+                };
+
+                state.stories.unshift(newStory);
+                app.saveData();
+                ui.showToast("Story Published Successfully!");
+                form.reset();
+                router.navigate('stories');
+            },
+
+            // --- Voting ---
+            handleVote: (id, type) => {
+                const story = state.stories.find(s => s.id === id);
+                if(story) {
+                    if(type === 'love') story.loves++;
+                    if(type === 'like') story.likes++;
+                    app.saveData();
+                    ui.showToast(`You ${type}d this story!`);
+                    
+                    // Re-render current view if needed
+                    const currentView = document.querySelector('.view-section.active').id;
+                    if(currentView === 'view-stories') app.renderStories();
+                    if(currentView === 'view-home') app.renderHome();
+                    if(currentView === 'view-leaderboard') app.renderLeaderboard();
+                }
+            },
+
+            voteFromModal: (type) => {
+                if(state.currentModalStoryId) {
+                    app.handleVote(state.currentModalStoryId, type);
+                    // Update modal UI immediately
+                    const story = state.stories.find(s => s.id === state.currentModalStoryId);
+                    ui.updateModalButtons(story);
+                }
+            },
+
+            // --- Leaderboard ---
+            renderLeaderboard: () => {
+                const ranked = [...state.stories].sort((a,b) => {
+                    const scoreA = (a.loves * 2) + a.likes;
+                    const scoreB = (b.loves * 2) + b.likes;
+                    return scoreB - scoreA;
+                }).slice(0, 10);
+
+                const html = ranked.map((s, idx) => `
+                    <div class="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <div class="col-span-1 flex justify-center">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">
+                                ${idx + 1}
+                            </div>
+                        </div>
+                        <div class="col-span-7 md:col-span-6 cursor-pointer" onclick="ui.openModal(${s.id})">
+                            <h3 class="font-bold text-slate-800 dark:text-white truncate">${s.title}</h3>
+                            <p class="text-xs text-slate-500 truncate">${s.category} • by ${s.author}</p>
+                        </div>
+                        <div class="col-span-4 md:col-span-5 flex justify-end gap-3 text-sm">
+                            <span class="flex items-center gap-1 text-pink-600 font-medium bg-pink-50 dark:bg-pink-900/20 px-2 py-1 rounded-md">
+                                <i data-lucide="heart" class="w-3 h-3 fill-current"></i> ${s.loves}
+                            </span>
+                            <span class="flex items-center gap-1 text-blue-600 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md">
+                                <i data-lucide="thumbs-up" class="w-3 h-3 fill-current"></i> ${s.likes}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('leaderboard-list').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            // --- Dashboard ---
+            renderDashboard: () => {
+                const myStories = state.stories.filter(s => s.author === state.user.name);
+                const reads = myStories.reduce((acc, curr) => acc + curr.reads, 0);
+                const loves = myStories.reduce((acc, curr) => acc + curr.loves, 0);
+
+                // Stats
+                document.getElementById('dashboard-stats').innerHTML = `
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
+                        <div class="p-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-xl"><i data-lucide="book-open" class="w-6 h-6"></i></div>
+                        <div><p class="text-sm text-slate-500 dark:text-slate-400">Total Reads</p><h3 class="text-2xl font-bold text-slate-800 dark:text-white">${reads}</h3></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
+                        <div class="p-3 bg-pink-100 dark:bg-pink-900/30 text-pink-600 rounded-xl"><i data-lucide="heart" class="w-6 h-6"></i></div>
+                        <div><p class="text-sm text-slate-500 dark:text-slate-400">Total Loves</p><h3 class="text-2xl font-bold text-slate-800 dark:text-white">${loves}</h3></div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-4">
+                        <div class="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-xl"><i data-lucide="trophy" class="w-6 h-6"></i></div>
+                        <div><p class="text-sm text-slate-500 dark:text-slate-400">Stories Published</p><h3 class="text-2xl font-bold text-slate-800 dark:text-white">${myStories.length}</h3></div>
+                    </div>
+                `;
+
+                // List
+                document.getElementById('my-stories-list').innerHTML = myStories.map(s => `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
+                        <div class="flex items-center gap-4 mb-3 md:mb-0">
+                            <img src="${s.image}" class="w-12 h-12 rounded-lg object-cover">
+                            <div><h4 class="font-bold text-slate-800 dark:text-white">${s.title}</h4><p class="text-xs text-slate-500">${new Date(s.timestamp).toLocaleDateString()}</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button onclick="app.deleteStory(${s.id})" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            },
+
+            // --- Admin ---
+            renderAdmin: () => {
+                const contentContainer = document.getElementById('admin-panel-content');
+                if (!contentContainer) return; // Should not happen but as a safety guard
+                
+                // If user is NOT admin, show denial and exit
+                if(state.user.role !== 'admin') {
+                    contentContainer.innerHTML = `
+                        <div class="text-center p-10 text-red-500 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700">
+                            <i data-lucide="lock" class="w-10 h-10 mx-auto mb-4 text-red-600"></i>
+                            <h3 class="text-xl font-bold text-slate-800 dark:text-white">Access Denied</h3>
+                            <p class="text-slate-500 dark:text-slate-400">You must be an administrator to view this console.</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+                
+                // If user IS admin, ensure the table structure is present (re-insert it if it was denied previously)
+                contentContainer.innerHTML = `
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 overflow-x-auto">
+                       <table class="w-full text-left min-w-[600px]">
+                         <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                           <tr>
+                             <th class="p-4 text-xs font-bold text-slate-500 uppercase">Title</th>
+                             <th class="p-4 text-xs font-bold text-slate-500 uppercase">Author</th>
+                             <th class="p-4 text-xs font-bold text-slate-500 uppercase">Stats</th>
+                             <th class="p-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                           </tr>
+                         </thead>
+                         <tbody id="admin-table-body" class="divide-y divide-slate-100 dark:divide-slate-700">
+                           <!-- Populated by JS -->
+                         </tbody>
+                       </table>
+                    </div>
+                `;
+
+                // Now populate the table body, which we know exists
+                const html = state.stories.map(s => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                        <td class="p-4 font-medium text-slate-800 dark:text-slate-200 max-w-xs truncate">${s.title}</td>
+                        <td class="p-4 text-sm text-slate-600 dark:text-slate-400">${s.author}</td>
+                        <td class="p-4 text-sm text-slate-600 dark:text-slate-400">L: ${s.loves} / R: ${s.reads}</td>
+                        <td class="p-4 text-right flex justify-end gap-2">
+                            <button onclick="app.toggleFeature(${s.id})" class="p-2 rounded-lg transition-colors ${s.isFeatured ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'}"><i data-lucide="star" class="w-4 h-4 ${s.isFeatured ? 'fill-current' : ''}"></i></button>
+                            <button onclick="app.deleteStory(${s.id})" class="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg hover:bg-red-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('admin-table-body').innerHTML = html;
+                lucide.createIcons();
+            },
+
+            // --- Admin Actions ---
+            deleteStory: (id) => {
+                // Using a custom modal would be better, but for a quick fix, we stick to confirm.
+                if(confirm("Are you sure you want to delete this story? This action cannot be undone.")) {
+                    state.stories = state.stories.filter(s => s.id !== id);
+                    app.saveData();
+                    ui.showToast("Story deleted", "info");
+                    app.render(); // Re-render current view
+                }
+            },
+            
+            toggleFeature: (id) => {
+                const s = state.stories.find(s => s.id === id);
+                if(s) {
+                    s.isFeatured = !s.isFeatured;
+                    app.saveData();
+                    app.renderAdmin(); // Re-render admin table
+                }
+            },
+
+            // General Helper to refresh current view
+            render: () => {
+                // Find the ID of the currently active view
+                const activeView = document.querySelector('.view-section.active');
+                if (activeView) {
+                    const currentId = activeView.id.replace('view-', '');
+                    router.navigate(currentId);
+                } else {
+                    // Fallback to home if somehow no view is active
+                    router.navigate('home');
+                }
+            }
+        };
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', app.init);
+    </script>
+</body>
+</html>
